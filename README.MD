@@ -2,7 +2,7 @@
 * [Introduction](#S-introduction)
 * [Installation](#S-installation)
 * [Quick Start](#S-quick-start)
-* [Before Running](#S-before-running)
+* [Before Assembly](#S-before-assembly)
 * [A Description of Config File](#S-desc-config-file)
 * [A Description of Ouput Format](#S-desc-output-format)
 * [Contact](#S-contact)
@@ -77,7 +77,7 @@ The (sub)sequences that failed to be corrected is
 /home/sysu/test/cns_test/EcoliConsensus/WorkDirIter3/WorkDirIter3UnCns.fasta
 ```
 
-# <a name="S-before-running"></a> Before Assembly 
+# <a name="S-before-assembly"></a> Before Assembly 
 Nanopore raw noisy reads can be very long and so are the corrected ones. Please note that `mecat2canu` from [MECAT](https://github.com/xiaochuanle/MECAT) has hardcoded the maximal length of input reads to be about 60,000. So before running `mecat2canu` for assembly, please run `OntCns2SplitLongReads` to partition long reads into short fragments:
 ``` shell
 OntCns2SplitLongReads 500 50000 WorkDirIter3Cns.fasta WorkDirIter3Cns50000.fasta
