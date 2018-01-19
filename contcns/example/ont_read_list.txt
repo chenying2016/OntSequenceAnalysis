@@ -1,0 +1,1 @@
+/home/sysu/smrt/data/MAP006-PCR-1_2D_pass.fasta
