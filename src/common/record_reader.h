@@ -1,35 +1,26 @@
 #ifndef RECORD_READER_H
 #define RECORD_READER_H
 
-#include "aux_tools.h"
-#include "buffer_line_reader.h"
-#include <sstream>
-#include <string>
+#include "../common/ontcns_aux.h"
 
-class RecordReader: public mc_noncopyable
-{
-public:
-    RecordReader(const char* record_path):
-        line_reader_(record_path) {}
-	
-	template <typename T>
-	bool read_one_record(T& v) {
-		if (++line_reader_) {
-			const BufferLineReader::OneDataLine& line_data = line_reader_.get_line();
-			line.assign(line_data.begin(), line_data.end());
-			ins.str( line );
-			ins.clear();
-			v.read_from(ins);
-			return 1;
-		} else {
-			return 0;
-		}
-	}
+#define OcReaderBufferDefaultSize (64*(1<<20))
 
-private:
-	std::string line;
-    std::istringstream ins;
-    BufferLineReader line_reader_;
-};
+typedef struct {
+	FILE* in;
+	char* buffer;
+	char* curr;
+	size_t record_size;
+	size_t l, m;
+	size_t max_num_records;
+} BinRecordReader;
+
+BinRecordReader*
+new_BinRecordReader(const char* path, size_t record_size);
+
+BinRecordReader*
+free_BinRecordReader(BinRecordReader* reader);
+
+BOOL
+get_BinRecordReader(BinRecordReader* reader, void* rptr);
 
 #endif // RECORD_READER_H

@@ -8,39 +8,43 @@ endif
 TARGET       := libontcns.a
 
 SOURCES      := \
-		common/argument.cpp \
-		common/buffer_line_reader.cpp \
-		common/cns_seq.cpp \
-		common/defs.cpp \
-		common/fasta_reader.cpp \
-		common/gapped_candidate.cpp \
-		common/lookup_table.cpp \
-		common/lookup_table_bucket_sort.cpp \
-		common/m4record.cpp \
-		common/mc_log.cpp \
-		common/mc_ostream.cpp \
-		common/output_stream.cpp \
-		common/packed_db.cpp \
-		common/pdb_aux.cpp \
-		common/sequence.cpp \
-		tasc/align_tags.cpp \
-		tasc/cbcns.cpp \
-		tasc/cns_aux.cpp \
-		tasc/soa.cpp \
-		word_finder/chain_dp.cpp \
-		word_finder/word_finder_aux.cpp \
-		word_finder/word_finder.cpp \
-		gapped_align/diff_ex.cpp \
-		gapped_align/edlib_ex.cpp \
-		gapped_align/ontcns_aligner.cpp \
-		gapped_align/results_pool.cpp \
-		gapped_align/xdrop_sw.cpp
+	./common/gapped_candidate.c \
+	./common/ontcns_aux.c \
+	./common/ontcns_defs.c \
+	./common/m4_record.c \
+	./common/makedb_aux.c \
+	./common/map_aux.c \
+	./common/map_options.c \
+	./common/nst_nt4_table.c \
+	./common/oc_assert.c \
+	./common/packed_db.c \
+	./common/record_reader.c \
+	./common/record_writer.c \
+	./common/soa.c \
+	./gapped_align/edlib_ex.c \
+	./gapped_align/edlib_ex_aux.c \
+	./gapped_align/oc_aligner.c \
+	./klib/kstring.c \
+	./lookup_table/hash_list_bucket_sort.c \
+	./lookup_table/lookup_table.c \
+	./partition_candidates/pcan_aux.c \
+	./tasc/align_tags.c \
+	./tasc/cbcns.c \
+	./tasc/cns_aux.c \
+	./tasc/align_tags.c \
+	./word_finder/chain_dp.c \
+	./word_finder/word_finder_aux.c \
+	./word_finder/word_finder.c
 
 SRC_INCDIRS  := common \
-				word_finder
 
-SUBMAKEFILES := ./ontcns_cns/ontcns_cns.mk \
-	./sequence_stats/ontcns_sequence_stats.mk \
-	./split_long_reads/ontcns_split_long_reads.mk \
-	./ontcns_makedb/ontcns_makedb.mk \
-	./ontcns_candidate_detector/OntCns2CanFinder.mk
+SUBMAKEFILES := ./test/main.mk \
+	./makedb/main.mk \
+	./pm_one_volume/main.mk \
+	./pairwise_mapping/main.mk \
+	./partition_candidates/main.mk \
+	./consensus/main.mk \
+	./reference_mapping/main.mk \
+	./assembly/main.mk \
+	./sequence_length_stats/main.mk \
+	./split_long_reads/main.mk

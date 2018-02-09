@@ -1,42 +1,33 @@
 #ifndef ALIGN_TAGS_H
 #define ALIGN_TAGS_H
 
-#include "../common/defs.h"
+#include "../klib/kstring.h"
+#include "../klib/kvec.h"
+#include "../common/ontcns_defs.h"
 
-#include <string>
-#include <vector>
-
-#define PB_WEIGHT 2
-#define ONT_WEIGHT 1
-
-struct AlignTag
-{
+typedef struct {
 	double weight;
 	int t_pos;
-    int p_t_pos;
-    u8 delta;
-    u8 p_delta;
-    char q_base;
-    char p_q_base;
-};
+	int p_t_pos;
+	u8 delta;
+	u8 p_delta;
+	char q_base;
+	char p_q_base;
+} AlignTag;
 
-struct AlignTagLessThan
-{
-    bool operator()(const AlignTag& a, const AlignTag& b) {
-        if (a.t_pos != b.t_pos) return a.t_pos < b.t_pos;
-        if (a.delta != b.delta) return a.delta < b.delta;
-        if (a.q_base != b.q_base) return a.q_base < b.q_base;
-        if (a.p_t_pos != b.p_t_pos) return a.p_t_pos < b.p_t_pos;
-        if (a.p_delta != b.p_delta) return a.p_delta < b.p_delta;
-        return a.p_q_base < b.p_q_base;
-    }
-};
+typedef kvec_t(AlignTag) vec_align_tag;
 
-bool
-get_cns_tags(const std::string& qaln, 
-			 const std::string& taln, 
-			 int toff, 
+void
+ks_introsort_AlignTag(size_t n, AlignTag* tags);
+
+BOOL
+get_cns_tags(const char* qaln,
+			 const char* taln,
+			 const size_t aln_size,
+			 kstring_t* target,
+			 int toff,
+			 int tend,
 			 double weight,
-			 std::vector<AlignTag>& tags);
+			 vec_align_tag* tags);
 
 #endif // ALIGN_TAGS_H

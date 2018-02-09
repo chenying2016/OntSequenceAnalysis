@@ -1,37 +1,23 @@
 #ifndef CNS_AUX_H
 #define CNS_AUX_H
 
-#include "../common/defs.h"
-#include "../common/mc_log.h"
 #include "align_tags.h"
-#include "soa.h"
+#include "../common/soa.h"
+#include "../klib/kvec.h"
 
-#include <algorithm>
-#include <iostream>
-#include <string>
-#include <vector>
-
-struct LinkInfo
-{
-	double weight;
+typedef struct {
+    double weight;
     int p_t_pos;
     u8 p_delta;
     char p_q_base;
     int link_count;
+} LinkInfo;
 
-    bool operator==(const LinkInfo& r) {
-        return p_t_pos == r.p_t_pos
-               &&
-               p_delta == r.p_delta
-               &&
-               p_q_base == r.p_q_base;
-    }
-};
+#define LinkInfo_EQ(a, b) ((a).p_t_pos == (b).p_t_pos && (a).delta == (b).delta && (a).p_q_base == (b).p_q_base)
 
-typedef FixedSizeObjectAllocator LinkInfoAllocator;
+typedef OcObjectAllocator LinkInfoAllocator;
 
-struct BaseLinks
-{
+typedef struct {
     int n_link;
     int coverage;
     LinkInfo* plinks;
@@ -39,65 +25,41 @@ struct BaseLinks
     u8 best_p_delta;
     u8 best_p_q_base;
     double score;
-};
+} BaseLinks;
 
-std::ostream& operator<<(std::ostream& out, const BaseLinks& lnk);
-
-struct DeltaCovInfo
-{
+typedef struct {
     BaseLinks links[5];
-};
+} DeltaCovInfo;
 
-typedef FixedSizeObjectAllocator DeltaCovInfoAllocator;
+typedef OcObjectAllocator DeltaCovInfoAllocator;
 
-struct BackboneItem
-{
+typedef struct {
     int n_delta;
     DeltaCovInfo* delta;
-};
+} BackboneItem;
 
-std::ostream& operator<<(std::ostream& out, const BackboneItem& it);
+typedef kvec_t(BackboneItem) vec_backbone_item;
 
-struct BackboneItemCleaner
-{
-    void operator()(BackboneItem& bitem) {
-        bitem.n_delta = 0;
-        bitem.delta = 0;
-    }
-};
+#define clear_BackboneItem(item) ((item).n_delta = 0, (item).delta = 0)
 
-struct AlignTagPLinkEq
-{
-    bool operator()(const AlignTag& a, const AlignTag& b) {
-        return a.p_t_pos == b.p_t_pos
-               &&
-               a.p_delta == b.p_delta
-               &&
-               a.p_q_base == b.p_q_base;
-    }
-};
-
-void build_backbone(std::vector<AlignTag>& tags, 
-					const int template_size, 
-					DeltaCovInfoAllocator& dci_alloc,
-					LinkInfoAllocator& li_alloc,
-					std::vector<BackboneItem>& backbone,
-					std::vector<int>& coverage);
+#define AlignTag_PLinkEq(a, b) ((a).p_t_pos == (b).p_t_pos && (a).p_delta == (b).p_delta && (a).p_q_base == (b).p_q_base)
 
 void
-consensus_backbone_segment(std::vector<BackboneItem>& backbone,
-						   int from,
-						   int to,
-						   std::vector<int>& coverage,
-						   std::string& cns_seq);
+build_backbone(AlignTag* tags,
+			   const int ntag,
+			   const int template_size,
+			   DeltaCovInfoAllocator* dci_alloc,
+			   LinkInfoAllocator* li_alloc,
+			   vec_backbone_item* backbone,
+			   vec_int* coverage);
 
 void
-consensus_backbone_segment(std::vector<BackboneItem>& backbone,
+consensus_backbone_segment(BackboneItem* backbone,
 						   int from,
 						   int to,
-						   std::vector<int>& coverage,
-						   std::string& cns_seq,
-						   int& cns_from,
-						   int& cns_to);
+						   int* coverage,
+						   kstring_t* cns_seq,
+						   int* cns_from,
+						   int* cns_to);
 
 #endif // CNS_AUX_H

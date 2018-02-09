@@ -1,201 +1,105 @@
-#ifndef INDEL_DETECTION_PACKED_DB_H
-#define INDEL_DETECTION_PACKED_DB_H
+#ifndef PACKED_DB_H
+#define PACKED_DB_H
 
-#include <vector>
-#include <cstring>
-#include <string>
+#include "ontcns_aux.h"
+#include "ontcns_defs.h"
+#include "../klib/kseq.h"
+#include "../klib/kstring.h"
+#include "../klib/kvec.h"
 
-#include "defs.h"
-#include "pod_darr.h"
-#include "sequence.h"
-#include "smart_assert.h"
+KSEQ_DECLARE(gzFile)
 
-class PackedDB
+typedef struct
 {
-public:
-    struct SeqIndex
-    {
-        idx offset;
-        idx size;
-		idx header_offset;
-		int tech;
-        SeqIndex(idx o = 0, idx s = 0, idx h = 0, int p = TECH_PACBIO)
-			: offset(o), size(s), header_offset(h), tech(p) {}
-    };
-	
-	idx size2bytes(const idx s) {
-		return (s + 3) >> 2;
-	}
+    idx offset;
+    idx size;
+    int platform;
+} SequenceInfo;
 
-public:
-    static void set_pac_char(u8* p, const idx i, const u8 c)
-    {
-        p[i >> 2] |= c << ((~i&3)<<1);
-    }
-    static u8 get_pac_char(const u8* p, const idx i)
-    {
-        u8 c = p[i >> 2] >> ((~i&3)<<1)&3;
-        return c;
-    }
-    void generate_pac_name(const char* prefix, std::string& pac_name)
-    {
-        pac_name = prefix;
-        pac_name += ".pac";
-    }
-    void generate_idx_name(const char* prefix, std::string& idx_name)
-    {
-        idx_name = prefix;
-        idx_name += ".idx";
-    }
+void
+make_packed_db_name(const char* prefix, kstring_t* packed_db_name);
 
-public:
-    PackedDB() : m_pac(NULL), m_db_size(0), m_max_db_size(0) {}
-    ~PackedDB() { destroy(); }
-	
-	void merge(PackedDB& rpdb);
+typedef struct {
+    u8*                 	m_pac;
+    idx                 	m_db_size;
+    idx                 	m_max_db_size;
+    kvec_t(SequenceInfo)	m_seq_info;    
+} PackedDB;
 
-    void set_char(const idx i, const u8 c)
-    {
-#ifndef NDEBUG
-        r_assert(i < m_max_db_size)(i)(m_db_size);
-#endif
-        set_pac_char(m_pac, i, c);
-    }
-    u8 get_char(const idx i) const
-    {
-#ifndef NDEBUG
-        r_assert(i < m_db_size)(i)(m_db_size);
-#endif
-        return get_pac_char(m_pac, i);
-    }
-	
-	int seq_tech(const idx i) const {
-		return m_seq_idx[i].tech;
-	}
+#define PDB_NUM_SEQS(pdb) 			(kv_size((pdb)->m_seq_info))
+#define PDB_SEQ_OFFSET(pdb, i)		((kv_A((pdb)->m_seq_info, (i))).offset)
+#define PDB_SEQ_SIZE(pdb, i)		(kv_A((pdb)->m_seq_info, (i)).size)
+#define PDB_GET_CHAR(pdb, i)		(_get_pac((pdb)->m_pac, (i)))
+#define PDB_SET_CHAR(pdb, i, c)		(_set_pac((pdb)->m_pac, i, c))
+#define PDB_SIZE(pdb)				((pdb)->m_db_size)
 
-    void destroy()
-    {
-        if (m_pac) delete[] m_pac;
-        m_pac = NULL;
-        m_db_size = 0;
-        m_max_db_size = 0;
-        m_seq_idx.clear();
-    }
+PackedDB*
+new_PackedDB();
 
-    void clear()
-    {
-        if (m_db_size)
-        {
-            idx pac_bytes =size2bytes(m_db_size);
-            memset(m_pac, 0, pac_bytes);
-        }
-        m_db_size = 0;
-        m_seq_idx.clear();
-		m_headers.clear();
-    }
+PackedDB*
+free_PackedDB(PackedDB* pdb);
 
-    void alloc(const idx size)
-    {
-        destroy();
-        m_db_size = 0;
-        m_max_db_size = size;
-        const u64 bytes = size2bytes(size);
-        m_pac = new u8[bytes];
-        memset(m_pac, 0, bytes);
-    }
+void
+init_packed_db(PackedDB* pdb);
 
-    idx size() const
-    {
-        return m_db_size;
-    }
+void
+destroy_packed_db(PackedDB* pdb);
 
-    idx num_seqs() const
-    {
-        return m_seq_idx.size();
-    }
+void
+pdb_clear(PackedDB* pdb);
 
-    idx seq_offset(const idx i) const
-    {
-#ifndef NDEBUG
-        const idx ns = num_seqs();
-        r_assert(i < ns)(i)(ns);
-#endif
-        return m_seq_idx[i].offset;
-    }
+idx
+pdb_size(PackedDB* pdb);
 
-    idx seq_size(const idx i) const
-    {
-#ifndef NDEBUG
-        const idx ns = num_seqs();
-        r_assert(i < ns)(i)(ns);
-#endif
-        return m_seq_idx[i].size;
-    }
-	
-	const char* seq_header(const idx i) const
-	{
-		return m_headers.data() + m_seq_idx[i].header_offset;
-	}
+idx
+pdb_num_seqs(PackedDB* pdb);
 
-    idx offset_to_id(const idx offset) const
-    {
-#ifndef NDEBUG
-        r_assert(offset < m_db_size)(offset)(m_db_size);
-#endif
-        idx ns = num_seqs();
-        idx left = 0, mid = 0, right = ns;
-        while(left < right)
-        {
-            mid = (left + right) >> 1;
-            if (offset >= m_seq_idx[mid].offset)
-            {
-                if (mid == ns - 1) break;
-                if (offset < m_seq_idx[mid + 1].offset) break;
-                left = mid + 1;
-            }
-            else
-            {
-                right = mid;
-            }
-        }
-        return mid;
-    }
+int
+pdb_seq_platform(PackedDB* pdb, const idx i);
 
-	void add_one_encode_seq(const char* seq, const idx size);
-    void add_one_raw_seq(const char* seq, const idx size);
-	void add_one_raw_seq(Sequence& sequence, int platform);
-    void get_sequence(const idx from, const idx to, const bool fwd, char* seq) const;
-    void get_sequence(const idx rid, const bool fwd, char* seq) const;
-    void get_sequence(const idx rid, const idx from, const idx to, const bool fwd, char* seq) const;
-    void get_raw_sequence(const idx rid, const idx from, const idx to, const bool fwd, char* seq) const;
-    void dump_pac(const char* path);
-    void load_pac(const char* path);
-	void load_index(const char* path);
-    void load_fasta(const char* path);
-	
-	void load(const char* path);
+idx 
+pdb_seq_offset(PackedDB* pdb, const idx i);
 
-private:
-    void check_and_realloc(const idx added_size);
+idx
+pdb_seq_size(PackedDB* pdb, const idx i);
 
-private:
-    u8*                   m_pac;
-    idx                   m_db_size;
-    idx                   m_max_db_size;
-    std::vector<SeqIndex>   m_seq_idx;
-	PODArray<char>			m_headers;
-};
+idx 
+pdb_offset_to_id(PackedDB* pdb, const idx offset);
 
-enum DBType
+void
+pdb_enlarge_size(PackedDB* pdb, const idx added_size);
+
+void
+pdb_add_one_seq(PackedDB* pdb, kseq_t* seq, int platform);
+
+void
+pdb_extract_subsequence(PackedDB* pdb, const idx i, const idx from, const idx to, const int strand, kstring_t* s);
+
+void
+pdb_extract_sequence(PackedDB* pdb, const idx i, const int strand, kstring_t* s);
+
+void
+pdb_print_info(PackedDB* pdb);
+
+void
+pdb_dump(PackedDB* pdb, const char* path);
+
+void
+pdb_load(PackedDB* pdb, const char* path, const int platform);
+
+void
+pdb_merge(PackedDB* from, PackedDB* to);
+
+typedef enum 
 {
     eFasta,
     eFastq,
-	ePac,
+    ePac,
     eEmptyFile,
     eUnknown
-};
+} DBType;
 
 DBType
 detect_db_type(const char* path);
 
-#endif //INDEL_DETECTION_PACKED_DB_H
+#endif // PACKED_DB_H

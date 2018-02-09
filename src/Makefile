@@ -368,10 +368,10 @@ ${info Building for '${OSTYPE}' '${OSVERSION}' as '${MACHINETYPE}'}
 
 ifeq ($(BUILDDEBUG), 1)
 	CXXFLAGS = -D_GLIBCXX_PARALLEL -pthread -O0 -Wall -g -fopenmp
-	CFLAGS = -D_GLIBCXX_PARALLEL -pthread -O0 -Wall -g -fopenmp
+	CFLAGS = -D_GLIBCXX_PARALLEL -pthread -O0 -Wall -g -fopenmp -std=gnu99
 else
 	CXXFLAGS = -D_GLIBCXX_PARALLEL -pthread -O3 -Wall 
-	CFLAGS = -D_GLIBCXX_PARALLEL -pthread -O3 -Wall 
+	CFLAGS = -D_GLIBCXX_PARALLEL -pthread -O3 -Wall -std=gnu99
 endif
 
 LDFLAGS = -pthread -lm -fopenmp -lz 
