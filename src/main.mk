@@ -38,13 +38,12 @@ SOURCES      := \
 
 SRC_INCDIRS  := common \
 
-SUBMAKEFILES := ./test/main.mk \
+SUBMAKEFILES := \
 	./makedb/main.mk \
 	./pm_one_volume/main.mk \
 	./pairwise_mapping/main.mk \
 	./partition_candidates/main.mk \
 	./consensus/main.mk \
 	./reference_mapping/main.mk \
-	./assembly/main.mk \
 	./sequence_length_stats/main.mk \
 	./split_long_reads/main.mk
